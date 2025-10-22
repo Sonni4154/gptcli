@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# deploy-gpt-cli.sh — Installs curl/jq and adds a robust `gpt` function to ~/.bashrc
-# Works on Debian/Ubuntu (apt). Safe to re-run (idempotent).
+# deploy-gpt-cli.sh — Installs curl/jq and adds a robust `gpt` function to ~/.bashrc.
+# Prompts for OPENAI_API_KEY if not already set. Safe to re-run.
+# Written by Spencer Reiser
 
 set -euo pipefail
 
-# --- Preconditions & deps ---
+# --- Ensure Debian/Ubuntu environment (apt) ---
 if ! command -v apt-get >/dev/null 2>&1; then
   echo "This installer expects Debian/Ubuntu (apt-get). Aborting."
   exit 1
 fi
 
+# --- Install deps ---
 echo "→ Installing dependencies (curl, jq)..."
 sudo apt-get update -y >/dev/null
 sudo apt-get install -y curl jq >/dev/null
@@ -21,6 +23,49 @@ STAMP_END="# END GPT CLI"
 # --- Backup once per run ---
 BACKUP="${BASHRC}.bak.$(date +%Y%m%d%H%M%S)"
 cp "$BASHRC" "$BACKUP" 2>/dev/null || true
+
+# --- Ensure an API key exists (prompt if not) ---
+ensure_api_key() {
+  # If not in env, prompt (without echo); write to ~/.bashrc and export for current session.
+  if [[ -z "${OPENAI_API_KEY:-}" ]]; then
+    # Read from TTY to avoid piping issues
+    if [[ -t 0 ]]; then
+      read -r -s -p "Enter your OPENAI_API_KEY (input hidden): " KEY_INPUT
+      echo
+    else
+      # Fallback for non-interactive shells: read from /dev/tty
+      read -r -s -p "Enter your OPENAI_API_KEY (input hidden): " KEY_INPUT </dev/tty
+      echo
+    fi
+
+    if [[ -z "${KEY_INPUT}" ]]; then
+      echo "Error: No key entered. Aborting."
+      exit 1
+    fi
+
+    # Export for current session
+    export OPENAI_API_KEY="${KEY_INPUT}"
+    unset KEY_INPUT
+
+    # Persist if not already present
+    if ! grep -q 'export OPENAI_API_KEY=' "$BASHRC"; then
+      printf '\n# Persisted by deploy-gpt-cli.sh\nexport OPENAI_API_KEY=%q\n' "$OPENAI_API_KEY" >> "$BASHRC"
+      echo "→ Persisted OPENAI_API_KEY in ~/.bashrc"
+    else
+      echo "→ OPENAI_API_KEY already persisted in ~/.bashrc (leaving as-is)"
+    fi
+  else
+    # Already set in env; persist if not already saved
+    if ! grep -q 'export OPENAI_API_KEY=' "$BASHRC"; then
+      printf '\n# Persisted by deploy-gpt-cli.sh\nexport OPENAI_API_KEY=%q\n' "$OPENAI_API_KEY" >> "$BASHRC"
+      echo "→ Persisted existing OPENAI_API_KEY from environment to ~/.bashrc"
+    else
+      echo "→ OPENAI_API_KEY present (env & ~/.bashrc)."
+    fi
+  fi
+}
+
+ensure_api_key
 
 # --- Remove any previous block we installed ---
 if grep -q "$STAMP_BEGIN" "$BASHRC" 2>/dev/null; then
@@ -78,12 +123,6 @@ gpt () {
 }
 # END GPT CLI
 EOF
-
-# --- Optional: persist OPENAI_API_KEY if it exists in current env and not already saved ---
-if [[ -n "${OPENAI_API_KEY:-}" ]] && ! grep -q "export OPENAI_API_KEY=" "$BASHRC"; then
-  printf '\n# Persisted by deploy-gpt-cli.sh\nexport OPENAI_API_KEY=%q\n' "$OPENAI_API_KEY" >> "$BASHRC"
-  echo "→ Persisted OPENAI_API_KEY in ~/.bashrc"
-fi
 
 echo "✅ Installed. Open a new shell or run:  source ~/.bashrc"
 echo
