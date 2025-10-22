@@ -19,7 +19,7 @@ Clear error messages from the API (not just null)
 
 Quickstart
 # 1) Clone this repo
-git clone https://www.github.com/Sonni4154/gptcli.git gpt-cli && cd gpt-cli
+git clone <your-repo-url> gpt-cli && cd gpt-cli
 
 # 2) Make the installer executable
 chmod +x deploy-gpt-cli.sh
