@@ -1,23 +1,25 @@
-GPT CLI (Debian/Ubuntu)
+# GPT CLI (Debian/Ubuntu)
 
-A tiny, repo-friendly installer that adds a gpt command to your shell (~/.bashrc) so you can chat with OpenAI straight from the terminal. If OPENAI_API_KEY isn’t set, the installer will prompt for it and persist it to ~/.bashrc.
+A tiny, repo-friendly installer that adds a `gpt` command to your shell (`~/.bashrc`) so you can chat with OpenAI straight from the terminal. If `OPENAI_API_KEY` isn’t set, the installer will **prompt for it** and persist it to `~/.bashrc`.
 
-This repo contains a single script: deploy-gpt-cli.sh.
-It’s idempotent and safe to re-run.
+> This repo contains a single script: `deploy-gpt-cli.sh`.  
+> It’s idempotent and safe to re-run.
 
-Features
+---
 
-Zero-config install on Debian/Ubuntu (apt-get)
+## Features
 
-Prompts & saves OPENAI_API_KEY if missing
+- Zero-config install on Debian/Ubuntu (`apt-get`)
+- Prompts & saves `OPENAI_API_KEY` if missing
+- Works with args **or** piped stdin
+- Override model via `GPT_MODEL` (defaults to `gpt-4o-mini`)
+- Clear error messages from the API (not just `null`)
 
-Works with args or piped stdin
+---
 
-Override model via GPT_MODEL (defaults to gpt-4o-mini)
+## Quickstart
 
-Clear error messages from the API (not just null)
-
-Quickstart
+```bash
 # 1) Clone this repo
 git clone <your-repo-url> gpt-cli && cd gpt-cli
 
@@ -29,13 +31,19 @@ chmod +x deploy-gpt-cli.sh
 
 # 4) Load changes (or open a new shell)
 source ~/.bashrc
-
+```
 
 Test it:
 
+```bash
 gpt "Say hello in one sentence"
+```
 
-Usage
+---
+
+## Usage
+
+```bash
 # Simple prompt
 gpt "Outline a deployment checklist"
 
@@ -45,64 +53,71 @@ cat README.md | gpt "Summarize in 5 bullets"
 # Choose a different model for this shell
 export GPT_MODEL=gpt-4o
 gpt "Give me 3 ideas for improving DX"
+```
 
-What gets installed?
+---
 
-The script appends a gpt() bash function to ~/.bashrc:
+## What gets installed?
 
-Reads the prompt from CLI args or stdin
+The script appends a `gpt()` bash function to `~/.bashrc`:
 
-Constructs a safe JSON payload with jq
-
-Calls https://api.openai.com/v1/chat/completions
-
-Prints assistant output or a readable API error
+- Reads the prompt from CLI args or `stdin`
+- Constructs a safe JSON payload with `jq`
+- Calls `https://api.openai.com/v1/chat/completions`
+- Prints assistant output or a readable API error
 
 It also:
+- Installs `curl` and `jq` via `apt-get`
+- Prompts for `OPENAI_API_KEY` (if not set) and persists it to `~/.bashrc`
 
-Installs curl and jq via apt-get
+---
 
-Prompts for OPENAI_API_KEY (if not set) and persists it to ~/.bashrc
+## Requirements
 
-Requirements
+- Debian/Ubuntu with `apt-get`
+- `bash`, `curl`, `jq`
+- An OpenAI API key
 
-Debian/Ubuntu with apt-get
+> Already have your key? You can pre-set it:
+> ```bash
+> export OPENAI_API_KEY="sk-..."
+> ```
 
-bash, curl, jq
+---
 
-An OpenAI API key
+## Troubleshooting
 
-Already have your key? You can pre-set it:
-
-export OPENAI_API_KEY="sk-..."
-
-Troubleshooting
-
-“API error: …”
+**“API error: …”**  
 Key may be invalid or rate-limited. Re-set it:
-
+```bash
 sed -n '/OPENAI_API_KEY/p' ~/.bashrc   # confirm saved value
 export OPENAI_API_KEY="sk-..."         # override in current shell
+```
 
-
-“Error: jq is required”
+**“Error: jq is required”**  
 Install it:
-
+```bash
 sudo apt-get update && sudo apt-get install -y jq
+```
 
-
-Nothing prints / “null”
+**Nothing prints / “null”**  
 Reload your profile to pick up the latest function block:
-
+```bash
 source ~/.bashrc
+```
 
-Security Notes
+---
 
-Your API key is written to ~/.bashrc (user scope). Treat it like a password.
+## Security Notes
 
-On shared servers, consider storing the key in a separate file with 600 permissions and sourcing it from ~/.bashrc.
+- Your API key is written to `~/.bashrc` (user scope). Treat it like a password.
+- On shared servers, consider storing the key in a separate file with `600` permissions and sourcing it from `~/.bashrc`.
 
-Uninstall
+---
+
+## Uninstall
+
+```bash
 # Remove the GPT CLI block from ~/.bashrc
 sed -i '/# BEGIN GPT CLI/,/# END GPT CLI/d' ~/.bashrc
 
@@ -111,19 +126,24 @@ sed -i '/export OPENAI_API_KEY=/d' ~/.bashrc
 
 # Reload
 source ~/.bashrc
+```
 
-Contributing
+---
 
-Open an issue or PR with a clear description.
+## Contributing
 
-Keep the installer idempotent and Debian/Ubuntu-friendly.
+- Open an issue or PR with a clear description.
+- Keep the installer idempotent and Debian/Ubuntu-friendly.
+- Avoid adding heavyweight dependencies.
 
-Avoid adding heavyweight dependencies.
+---
 
-License
+## License
 
-MIT — see LICENSE.
+MIT — see `LICENSE`.
 
-Contact
+---
 
-Spencer Reiser — spencermreiser@gmail.com
+## Contact
+
+Spencer Reiser — <spencermreiser@gmail.com>
